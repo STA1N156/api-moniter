@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API 模型监控面板</title>
+  <meta name="description" content="实时监控 API 模型可用性状态，查看各模型可用率和响应延迟">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+</head>
+<body>
+  <div class="app-container" id="app">
+    <!-- 顶部栏 -->
+    <header class="header">
+      <div class="header-left">
+        <div class="header-logo">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="header-title" id="site-title">API 模型监控面板</div>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="header-status" id="check-status">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-text">运行中</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- 公告栏 -->
+    <div class="announcement" id="announcement" style="display: none;">
+      <div class="announcement-icon">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+        </svg>
+      </div>
+      <span id="announcement-text"></span>
+    </div>
+
+    <!-- 搜索栏 + 统计摘要 -->
+    <div class="search-bar-wrapper">
+      <div class="search-bar">
+        <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        <input type="text" class="search-input" id="search-input" placeholder="搜索模型名称..." autocomplete="off">
+        <span class="search-count" id="search-count"></span>
+      </div>
+    </div>
+
+    <!-- 模型列表容器 -->
+    <div id="models-container">
+      <div class="empty-state" id="loading-state">
+        <div class="loading-spinner" style="width:40px;height:40px;border-width:3px;margin:0 auto 20px;"></div>
+        <h3>加载中</h3>
+      </div>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+      数据每5分钟自动更新
+    </footer>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>

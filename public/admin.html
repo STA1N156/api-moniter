@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理后台 - API 模型监控</title>
+  <meta name="description" content="API 模型监控面板管理后台">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙</text></svg>">
+</head>
+<body>
+
+  <!-- 登录界面 -->
+  <div class="login-container" id="login-view">
+    <div class="login-card">
+      <div style="text-align:center;margin-bottom:24px;">
+        <div class="header-logo" style="margin:0 auto 16px;width:52px;height:52px;">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:28px;height:28px;">
+            <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94L14.4 2.81a.47.47 0 0 0-.47-.41h-3.85c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.86 8.87a.48.48 0 0 0 .12.61l2.03 1.58c-.05.3-.07.63-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.47.41h3.85c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/>
+          </svg>
+        </div>
+      </div>
+      <h1>管理后台</h1>
+      <p>输入管理员密码以继续</p>
+      <form id="login-form">
+        <div class="form-group">
+          <label class="form-label">管理员密码</label>
+          <input type="password" class="form-input" id="login-password" placeholder="请输入密码" autocomplete="current-password" autofocus>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full" id="login-btn">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+          登录
+        </button>
+      </form>
+      <div style="text-align:center;margin-top:20px;">
+        <a href="/" style="font-size:0.82rem;">返回前台</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 管理界面（登录后显示） -->
+  <div class="app-container" id="admin-view" style="display:none;">
+    <header class="header">
+      <div class="header-left">
+        <div class="header-logo">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94L14.4 2.81a.47.47 0 0 0-.47-.41h-3.85c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.86 8.87a.48.48 0 0 0 .12.61l2.03 1.58c-.05.3-.07.63-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.47.41h3.85c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="header-title">管理后台</div>
+          <div class="header-subtitle">API 模型监控面板配置</div>
+        </div>
+      </div>
+      <div class="header-right">
+        <a href="/" class="btn btn-secondary btn-sm">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+          前台
+        </a>
+        <button class="btn btn-secondary btn-sm" id="logout-btn">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+          退出
+        </button>
+      </div>
+    </header>
+
+    <div class="admin-layout">
+      <!-- 侧边栏 -->
+      <nav class="admin-sidebar">
+        <div class="sidebar-title">管理菜单</div>
+        <ul class="sidebar-nav">
+          <li class="sidebar-nav-item active" data-section="general">
+            <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+            概览
+          </li>
+          <li class="sidebar-nav-item" data-section="api">
+            <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+            API 配置
+          </li>
+          <li class="sidebar-nav-item" data-section="models">
+            <svg viewBox="0 0 24 24"><path d="M4 6h18V4H4c-1.1 0-2 .9-2 2v11H0v3h14v-3H4V6zm19 2h-6c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h6c.55 0 1-.45 1-1V9c0-.55-.45-1-1-1zm-1 9h-4v-7h4v7z"/></svg>
+            模型管理
+          </li>
+          <li class="sidebar-nav-item" data-section="site">
+            <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/><path d="M12.5 7H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+            站点设置
+          </li>
+          <li class="sidebar-nav-item" data-section="logs">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+            检查日志
+          </li>
+          <li class="sidebar-nav-item" data-section="security">
+            <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+            安全设置
+          </li>
+        </ul>
+      </nav>
+
+      <!-- 内容区 -->
+      <main class="admin-content">
+        <!-- 概览 -->
+        <section class="admin-section active" id="section-general">
+          <h2 class="admin-section-title">系统概览</h2>
+          <p class="admin-section-desc">快速查看系统运行状态和执行操作</p>
+
+          <!-- 下次检查倒计时 -->
+          <div class="countdown-card" id="countdown-card">
+            <div class="countdown-header">
+              <div class="countdown-info">
+                <svg viewBox="0 0 24 24" fill="var(--primary-light)" width="20" height="20"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>
+                <span id="countdown-label">距离下次检查</span>
+              </div>
+              <span class="countdown-time" id="countdown-time">--:--</span>
+            </div>
+            <div class="countdown-bar">
+              <div class="countdown-bar-fill" id="countdown-bar-fill" style="width:0%"></div>
+            </div>
+          </div>
+
+          <div class="stats-row" style="margin-bottom: 24px;">
+            <div class="stat-card">
+              <div class="stat-icon purple">
+                <svg viewBox="0 0 24 24"><path d="M4 6h18V4H4c-1.1 0-2 .9-2 2v11H0v3h14v-3H4V6zm19 2h-6c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h6c.55 0 1-.45 1-1V9c0-.55-.45-1-1-1zm-1 9h-4v-7h4v7z"/></svg>
+              </div>
+              <div>
+                <div class="stat-value" id="admin-stat-models">--</div>
+                <div class="stat-label">监控模型</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon green">
+                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+              </div>
+              <div>
+                <div class="stat-value" id="admin-stat-checks">--</div>
+                <div class="stat-label">总检查次数</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <button class="btn btn-primary" id="btn-check-now">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+              立即检查
+            </button>
+            <button class="btn btn-danger" id="btn-clear-data">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+              清除所有数据
+            </button>
+          </div>
+        </section>
+
+        <!-- API 配置 -->
+        <section class="admin-section" id="section-api">
+          <h2 class="admin-section-title">API 配置</h2>
+          <p class="admin-section-desc">配置 OpenAI 兼容 API 端点和认证密钥</p>
+          <form id="form-api">
+            <div class="form-group">
+              <label class="form-label">API 基础 URL</label>
+              <input type="url" class="form-input" id="cfg-api-base-url" placeholder="https://sta1n.zeabur.app/v1">
+            </div>
+            <div class="form-group">
+              <label class="form-label">API 密钥 (Bearer Token)</label>
+              <input type="text" class="form-input" id="cfg-api-key" placeholder="sk-xxxxxxxxxxxx">
+            </div>
+            <div class="form-group">
+              <label class="form-label">检查间隔 (分钟)</label>
+              <input type="number" class="form-input" id="cfg-check-interval" min="1" max="60" value="5">
+            </div>
+            <div class="form-group">
+              <label class="form-label">请求超时 (秒)</label>
+              <input type="number" class="form-input" id="cfg-check-timeout" min="5" max="120" value="30">
+            </div>
+            <div class="form-group">
+              <label class="form-label">测试消息内容</label>
+              <input type="text" class="form-input" id="cfg-test-message" placeholder="Hi" value="Hi">
+            </div>
+            <div class="form-group">
+              <label class="form-label">保留历史记录条数</label>
+              <input type="number" class="form-input" id="cfg-max-history" min="5" max="100" value="20">
+            </div>
+            <button type="submit" class="btn btn-primary">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+              保存配置
+            </button>
+          </form>
+        </section>
+
+        <!-- 模型管理 -->
+        <section class="admin-section" id="section-models">
+          <h2 class="admin-section-title">模型管理</h2>
+          <p class="admin-section-desc">管理模型显示名称、分组和可见性</p>
+
+          <div class="form-group">
+            <label class="form-label">隐藏模型（每行一个模型ID，这些模型不会在前台显示）</label>
+            <textarea class="form-input" id="cfg-hidden-models" rows="5" placeholder="model-id-1&#10;model-id-2"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">模型别名（JSON 格式: {"model-id": "显示名称"}）</label>
+            <textarea class="form-input" id="cfg-model-aliases" rows="5" placeholder='{"gpt-4": "GPT-4"}'></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">模型分组（JSON 格式: {"model-id": "分组名称"}）</label>
+            <textarea class="form-input" id="cfg-model-groups" rows="5" placeholder='{"gpt-4": "OpenAI 系列"}'></textarea>
+          </div>
+          <button class="btn btn-primary" id="btn-save-models">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+            保存模型配置
+          </button>
+
+          <div class="divider"></div>
+          <h3 style="font-size:0.95rem;font-weight:600;margin-bottom:12px;">已发现的模型</h3>
+          <div id="discovered-models-list">
+            <p style="color:var(--text-secondary);font-size:0.85rem;">加载中...</p>
+          </div>
+        </section>
+
+        <!-- 站点设置 -->
+        <section class="admin-section" id="section-site">
+          <h2 class="admin-section-title">站点设置</h2>
+          <p class="admin-section-desc">自定义前台页面的标题和公告</p>
+          <form id="form-site">
+            <div class="form-group">
+              <label class="form-label">站点标题</label>
+              <input type="text" class="form-input" id="cfg-site-title" placeholder="API 模型监控面板">
+            </div>
+            <div class="form-group">
+              <label class="form-label">站点公告（留空则不显示公告栏）</label>
+              <textarea class="form-input" id="cfg-site-announcement" rows="3" placeholder="输入公告内容..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+              保存站点设置
+            </button>
+          </form>
+        </section>
+
+        <!-- 检查日志 -->
+        <section class="admin-section" id="section-logs">
+          <h2 class="admin-section-title">检查日志</h2>
+          <p class="admin-section-desc">查看最近的模型健康检查记录</p>
+          <div style="margin-bottom:16px;">
+            <button class="btn btn-secondary btn-sm" id="btn-refresh-logs">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+              刷新日志
+            </button>
+          </div>
+          <div class="table-container" id="logs-table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>时间</th>
+                  <th>模型</th>
+                  <th>状态</th>
+                  <th>延迟</th>
+                  <th>错误信息</th>
+                </tr>
+              </thead>
+              <tbody id="logs-tbody">
+                <tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">加载中...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 安全设置 -->
+        <section class="admin-section" id="section-security">
+          <h2 class="admin-section-title">安全设置</h2>
+          <p class="admin-section-desc">修改管理员密码</p>
+          <form id="form-security">
+            <div class="form-group">
+              <label class="form-label">新密码</label>
+              <input type="password" class="form-input" id="cfg-new-password" placeholder="输入新密码">
+            </div>
+            <div class="form-group">
+              <label class="form-label">确认密码</label>
+              <input type="password" class="form-input" id="cfg-confirm-password" placeholder="再次输入密码">
+            </div>
+            <button type="submit" class="btn btn-primary">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+              修改密码
+            </button>
+          </form>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="/js/admin.js"></script>
+</body>
+</html>

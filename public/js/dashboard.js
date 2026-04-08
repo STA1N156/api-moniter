@@ -35,14 +35,14 @@ function formatTime(isoStr) {
 }
 
 function getAvailabilityColor(pct) {
-  if (pct >= 80) return 'var(--success)';
-  if (pct >= 50) return 'var(--warning)';
+  if (pct >= 70) return 'var(--success)';
+  if (pct >= 40) return 'var(--warning)';
   return 'var(--danger)';
 }
 
 function getCardStatusClass(pct) {
-  if (pct >= 80) return 'status-good';
-  if (pct >= 50) return 'status-warn';
+  if (pct >= 70) return 'status-good';
+  if (pct >= 40) return 'status-warn';
   return 'status-bad';
 }
 

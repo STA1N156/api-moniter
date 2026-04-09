@@ -32,7 +32,7 @@
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
 | `PORT` | `9292` | 服务端口 |
-| `ADMIN_PASSWORD` | `156456aa` | 管理员密码 |
+| `ADMIN_PASSWORD` | `admin123` | 管理员密码 |
 | `API_BASE_URL` | `https://sta1n.zeabur.app/v1` | API 端点 |
 | `API_KEY` | 空 | API 密钥 |
 | `DATA_DIR` | `/data` | 数据存储目录 |

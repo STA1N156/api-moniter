@@ -22,7 +22,7 @@
    - 添加磁盘，挂载路径设为 `/data`
    - 这样重启服务后检查数据不会丢失
 5. 配置环境变量：
-   - `ADMIN_PASSWORD` — 管理员密码（默认 `156456aa`）
+   - `ADMIN_PASSWORD` — 管理员密码（默认 `admin123`）
    - `API_KEY` — API 密钥（如需要）
    - `API_BASE_URL` — API 端点（默认 `https://sta1n.zeabur.app/v1`）
 6. 绑定域名即可访问

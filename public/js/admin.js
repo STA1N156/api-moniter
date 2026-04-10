@@ -140,11 +140,23 @@ async function loadConfig() {
     document.getElementById('cfg-site-title').value = config.site_title || '';
     document.getElementById('cfg-site-announcement').value = config.site_announcement || '';
 
+    // 重试配置
+    try {
+      const codes = JSON.parse(config.retry_status_codes || '[]');
+      document.getElementById('cfg-retry-status-codes').value = codes.join(',');
+    } catch { document.getElementById('cfg-retry-status-codes').value = ''; }
+    document.getElementById('cfg-retry-count').value = config.retry_count || '1';
+
     // 模型管理
     try {
       const hidden = JSON.parse(config.hidden_models || '[]');
       document.getElementById('cfg-hidden-models').value = hidden.join('\n');
     } catch { document.getElementById('cfg-hidden-models').value = ''; }
+
+    try {
+      const disabled = JSON.parse(config.disabled_models || '[]');
+      document.getElementById('cfg-disabled-models').value = disabled.join('\n');
+    } catch { document.getElementById('cfg-disabled-models').value = ''; }
 
     document.getElementById('cfg-model-aliases').value = config.model_aliases || '{}';
     document.getElementById('cfg-model-groups').value = config.model_groups || '{}';
@@ -202,6 +214,31 @@ function startCountdownTimer() {
       })
       .catch(() => {});
   }, 30000);
+
+  // 每2秒轮询检查进度
+  setInterval(() => {
+    pollCheckProgress();
+  }, 2000);
+}
+
+function pollCheckProgress() {
+  fetch('/api/check-progress')
+    .then(r => r.json())
+    .then(data => {
+      const card = document.getElementById('check-progress-card');
+      if (!card) return;
+
+      if (data.isChecking && data.currentModel) {
+        card.style.display = 'block';
+        document.getElementById('check-progress-model').textContent = data.currentModel;
+        document.getElementById('check-progress-count').textContent = `${data.current}/${data.total}`;
+        const pct = data.total > 0 ? Math.round((data.current / data.total) * 100) : 0;
+        document.getElementById('check-progress-bar').style.width = `${pct}%`;
+      } else {
+        card.style.display = 'none';
+      }
+    })
+    .catch(() => {});
 }
 
 function updateCountdownUI() {
@@ -250,6 +287,10 @@ function updateCountdownUI() {
 document.getElementById('form-api').addEventListener('submit', async (e) => {
   e.preventDefault();
   try {
+    // 解析重试状态码
+    const retryCodesStr = document.getElementById('cfg-retry-status-codes').value.trim();
+    const retryCodes = retryCodesStr ? retryCodesStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n)) : [];
+
     await apiRequest('/api/admin/config', {
       method: 'PUT',
       body: JSON.stringify({
@@ -259,6 +300,8 @@ document.getElementById('form-api').addEventListener('submit', async (e) => {
         check_timeout: document.getElementById('cfg-check-timeout').value,
         test_message: document.getElementById('cfg-test-message').value,
         max_history: document.getElementById('cfg-max-history').value,
+        retry_status_codes: JSON.stringify(retryCodes),
+        retry_count: document.getElementById('cfg-retry-count').value,
       }),
     });
     showToast('API 配置已保存', 'success');
@@ -274,6 +317,9 @@ document.getElementById('btn-save-models').addEventListener('click', async () =>
   const hiddenText = document.getElementById('cfg-hidden-models').value.trim();
   const hiddenArr = hiddenText ? hiddenText.split('\n').map(s => s.trim()).filter(Boolean) : [];
 
+  const disabledText = document.getElementById('cfg-disabled-models').value.trim();
+  const disabledArr = disabledText ? disabledText.split('\n').map(s => s.trim()).filter(Boolean) : [];
+
   const aliasesStr = document.getElementById('cfg-model-aliases').value.trim() || '{}';
   const groupsStr = document.getElementById('cfg-model-groups').value.trim() || '{}';
 
@@ -286,6 +332,7 @@ document.getElementById('btn-save-models').addEventListener('click', async () =>
       method: 'PUT',
       body: JSON.stringify({
         hidden_models: JSON.stringify(hiddenArr),
+        disabled_models: JSON.stringify(disabledArr),
         model_aliases: aliasesStr,
         model_groups: groupsStr,
       }),

@@ -89,10 +89,18 @@ function createHistoryDots(history, maxHistory = 25) {
   }
   for (const record of sorted) {
     const cls = record.success ? 'success' : 'fail';
-    const label = record.success ? `${record.latency}ms` : '失败';
+    let label = '';
+    if (record.success) {
+      label = `${record.latency}ms`;
+    } else {
+      // 提取错误原因，优先显示 HTTP 状态码
+      const errorMsg = record.error || '未知错误';
+      const httpMatch = errorMsg.match(/^HTTP (\d+)/);
+      label = httpMatch ? `HTTP ${httpMatch[1]}` : escapeHtml(errorMsg.substring(0, 50));
+    }
     dots.push(`
       <div class="history-dot ${cls}">
-        <div class="tooltip">${label}</div>
+        <div class="tooltip${record.success ? '' : ' tooltip-error'}">${label}</div>
       </div>
     `);
   }

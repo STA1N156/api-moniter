@@ -60,9 +60,12 @@ const DEFAULT_CONFIG = {
   site_title: 'API 模型监控面板',
   site_announcement: '',
   hidden_models: '[]',        // JSON 数组，隐藏不展示的模型
+  disabled_models: '[]',      // JSON 数组，禁用不请求的模型（也不显示）
   model_aliases: '{}',        // JSON 对象，模型别名映射
   model_groups: '{}',         // JSON 对象，模型分组
   max_history: '25',          // 保留的最大历史记录数
+  retry_status_codes: '[]',   // JSON 数组，需要重试的 HTTP 状态码
+  retry_count: '1',           // 重试次数
 };
 
 // 初始化默认配置
@@ -167,6 +170,9 @@ let isChecking = false;
 let lastCheckTime = null;
 let lastCheckEndTime = null; // 上次检查完成的精确时间戳
 let lastKnownModels = [];    // 最近一次从 API 获取到的模型 ID 列表
+let currentCheckingModel = null; // 当前正在检查的模型
+let checkProgressCurrent = 0;    // 当前检查进度（第几个）
+let checkProgressTotal = 0;      // 检查总数
 
 async function performHealthCheck() {
   if (isChecking) {
@@ -175,11 +181,18 @@ async function performHealthCheck() {
   }
 
   isChecking = true;
+  currentCheckingModel = null;
+  checkProgressCurrent = 0;
+  checkProgressTotal = 0;
+
   const apiBaseUrl = getConfig('api_base_url');
   const apiKey = getConfig('api_key');
   const checkTimeout = parseInt(getConfig('check_timeout')) || 30;
   const testMessage = getConfig('test_message') || 'Hi';
   const maxHistory = parseInt(getConfig('max_history')) || 20;
+  const disabledModels = JSON.parse(getConfig('disabled_models') || '[]');
+  const retryStatusCodes = JSON.parse(getConfig('retry_status_codes') || '[]');
+  const retryCount = parseInt(getConfig('retry_count')) || 1;
 
   console.log(`[健康检查] 开始 - ${new Date().toISOString()}`);
   console.log(`[健康检查] 端点: ${apiBaseUrl}`);
@@ -189,6 +202,7 @@ async function performHealthCheck() {
     const headers = { 'Content-Type': 'application/json' };
     if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
 
+    currentCheckingModel = '获取模型列表...';
     const modelsRes = await httpRequest(`${apiBaseUrl}/models`, {
       headers,
       timeout: checkTimeout,
@@ -197,6 +211,7 @@ async function performHealthCheck() {
     if (!modelsRes.ok) {
       console.log(`[健康检查] 获取模型列表失败: HTTP ${modelsRes.status}`);
       isChecking = false;
+      currentCheckingModel = null;
       lastCheckTime = new Date().toISOString();
       return;
     }
@@ -205,51 +220,80 @@ async function performHealthCheck() {
     if (!modelsData || !modelsData.data) {
       console.log('[健康检查] 模型列表格式异常');
       isChecking = false;
+      currentCheckingModel = null;
       lastCheckTime = new Date().toISOString();
       return;
     }
 
     const models = modelsData.data.map(m => m.id);
-    const hiddenModels = JSON.parse(getConfig('hidden_models') || '[]');
-    const visibleModels = models.filter(m => !hiddenModels.includes(m));
     lastKnownModels = [...models]; // 记录本次获取到的模型列表
 
-    console.log(`[健康检查] 发现 ${models.length} 个模型, ${visibleModels.length} 个可见`);
+    // 过滤禁用模型
+    const activeModels = models.filter(m => !disabledModels.includes(m));
+    checkProgressTotal = activeModels.length;
 
-    // 2. 逐个模型测试
+    console.log(`[健康检查] 发现 ${models.length} 个模型, ${activeModels.length} 个活跃 (${disabledModels.length} 个禁用)`);
+
+    // 2. 逐个模型顺序测试
     const insertResult = db.prepare(
       'INSERT INTO check_results (model, success, latency, error_msg, checked_at) VALUES (?, ?, ?, ?, datetime(\'now\'))'
     );
 
-    for (const modelId of models) {
-      const startTime = Date.now();
-      try {
-        const chatRes = await httpRequest(`${apiBaseUrl}/chat/completions`, {
-          method: 'POST',
-          headers,
-          timeout: checkTimeout,
-          body: JSON.stringify({
-            model: modelId,
-            messages: [{ role: 'user', content: testMessage }],
-            max_tokens: 10,
-          }),
-        });
+    for (const modelId of activeModels) {
+      checkProgressCurrent++;
+      currentCheckingModel = modelId;
+      console.log(`  [检查] (${checkProgressCurrent}/${checkProgressTotal}) ${modelId}`);
 
-        const latency = Date.now() - startTime;
+      let finalSuccess = false;
+      let finalLatency = 0;
+      let finalError = null;
+      let attempts = 0;
+      const maxAttempts = 1 + retryCount; // 首次 + 重试次数
 
-        if (chatRes.ok) {
-          insertResult.run(modelId, 1, latency, null);
-          console.log(`  [OK] ${modelId} - ${latency}ms`);
-        } else {
-          const errText = chatRes.text();
-          insertResult.run(modelId, 0, latency, `HTTP ${chatRes.status}: ${errText.substring(0, 200)}`);
-          console.log(`  [FAIL] ${modelId} - HTTP ${chatRes.status} - ${latency}ms`);
+      while (attempts < maxAttempts) {
+        attempts++;
+        const startTime = Date.now();
+        try {
+          const chatRes = await httpRequest(`${apiBaseUrl}/chat/completions`, {
+            method: 'POST',
+            headers,
+            timeout: checkTimeout,
+            body: JSON.stringify({
+              model: modelId,
+              messages: [{ role: 'user', content: testMessage }],
+              max_tokens: 10,
+            }),
+          });
+
+          finalLatency = Date.now() - startTime;
+
+          if (chatRes.ok) {
+            finalSuccess = true;
+            finalError = null;
+            console.log(`  [OK] ${modelId} - ${finalLatency}ms${attempts > 1 ? ` (第${attempts}次尝试)` : ''}`);
+            break;
+          } else {
+            const errText = chatRes.text();
+            finalError = `HTTP ${chatRes.status}: ${errText.substring(0, 200)}`;
+            console.log(`  [FAIL] ${modelId} - HTTP ${chatRes.status} - ${finalLatency}ms (第${attempts}次)`);
+
+            // 如果状态码在重试列表中且还有重试次数，则重试
+            if (retryStatusCodes.includes(chatRes.status) && attempts < maxAttempts) {
+              console.log(`  [重试] ${modelId} - 状态码 ${chatRes.status} 在重试列表中，等待2秒后重试...`);
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              continue;
+            }
+            break;
+          }
+        } catch (err) {
+          finalLatency = Date.now() - startTime;
+          finalError = err.message;
+          console.log(`  [ERROR] ${modelId} - ${err.message} - ${finalLatency}ms (第${attempts}次)`);
+          break; // 网络错误不重试
         }
-      } catch (err) {
-        const latency = Date.now() - startTime;
-        insertResult.run(modelId, 0, latency, err.message);
-        console.log(`  [ERROR] ${modelId} - ${err.message} - ${latency}ms`);
       }
+
+      insertResult.run(modelId, finalSuccess ? 1 : 0, finalLatency, finalError);
     }
 
     // 3. 清理旧记录：每个模型只保留最近 maxHistory 条
@@ -271,6 +315,9 @@ async function performHealthCheck() {
     lastCheckTime = new Date().toISOString();
   } finally {
     isChecking = false;
+    currentCheckingModel = null;
+    checkProgressCurrent = 0;
+    checkProgressTotal = 0;
   }
 }
 
@@ -299,11 +346,13 @@ app.get('/api/status', (req, res) => {
   const groups = JSON.parse(getConfig('model_groups') || '{}');
   const maxHistory = parseInt(getConfig('max_history')) || 20;
 
-  // 只显示最近一次健康检查获取到的模型（排除隐藏的）
+  const disabledModels = JSON.parse(getConfig('disabled_models') || '[]');
+
+  // 只显示最近一次健康检查获取到的模型（排除隐藏的和禁用的）
   const allModels = lastKnownModels.length > 0
     ? lastKnownModels
     : db.prepare('SELECT DISTINCT model FROM check_results').all().map(r => r.model);
-  const visibleModels = allModels.filter(m => !hiddenModels.includes(m));
+  const visibleModels = allModels.filter(m => !hiddenModels.includes(m) && !disabledModels.includes(m));
 
   const models = [];
   for (const modelId of visibleModels) {
@@ -336,6 +385,7 @@ app.get('/api/status', (req, res) => {
       history: records.map(r => ({
         success: !!r.success,
         latency: r.latency,
+        error: r.error_msg || null,
         time: r.checked_at,
       })),
     });
@@ -408,7 +458,8 @@ app.put('/api/admin/config', authMiddleware, (req, res) => {
   const allowedKeys = [
     'api_base_url', 'api_key', 'admin_password', 'check_interval',
     'check_timeout', 'test_message', 'site_title', 'site_announcement',
-    'hidden_models', 'model_aliases', 'model_groups', 'max_history'
+    'hidden_models', 'disabled_models', 'model_aliases', 'model_groups',
+    'max_history', 'retry_status_codes', 'retry_count'
   ];
 
   for (const [key, value] of Object.entries(updates)) {
@@ -453,6 +504,16 @@ app.delete('/api/admin/data', authMiddleware, (req, res) => {
 app.get('/api/admin/all-models', authMiddleware, (req, res) => {
   const allModels = db.prepare('SELECT DISTINCT model FROM check_results').all().map(r => r.model);
   res.json(allModels);
+});
+
+// 获取当前检查进度（实时状态）
+app.get('/api/check-progress', (req, res) => {
+  res.json({
+    isChecking,
+    currentModel: currentCheckingModel,
+    current: checkProgressCurrent,
+    total: checkProgressTotal,
+  });
 });
 
 // ============================================================
